@@ -9,8 +9,8 @@ services:
       - 8.8.8.8
       - 1.1.1.1
     networks:
-      - laravel_date_network
-      - db_shared_network # Red para hablar con DB compartida
+      - laravel_date_network      # Red interna existente
+      - shared_services_network    # Red compartida con MySQL
     env_file:
       - .env
     restart: always
@@ -33,7 +33,6 @@ services:
 networks:
   laravel_date_network:
     driver: bridge
-  # Red externa para conectar con contenedor de MySQL existente
-  db_shared_network:
+  shared_services_network:
     external: true
     name: shared_services_network

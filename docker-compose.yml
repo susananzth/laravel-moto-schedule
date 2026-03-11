@@ -10,7 +10,7 @@ services:
       - 1.1.1.1
     networks:
       - laravel_date_network
-      - db_shared_network # Red para hablar con DB compartida
+      - shared_services_network # Red para hablar con DB compartida
     env_file:
       - .env
     restart: always

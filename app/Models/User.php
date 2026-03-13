@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Notifications\Auth\ResetPasswordNotification;
 use App\Notifications\Auth\VerifyEmailNotification;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -99,14 +102,24 @@ class User extends Authenticatable implements MustVerifyEmail
 
     // --- RELACIONES (Eloquent) ---
 
-    // Un usuario (Cliente) tiene muchas citas solicitadas.
-    public function appointments() {
+    /**
+     * Un usuario (Cliente) tiene muchas citas solicitadas.
+     *
+     * @return HasMany
+     */
+    public function appointments(): HasMany
+    {
         return $this->hasMany(Appointment::class);
     }
 
-    // Un usuario (Técnico) tiene muchas citas asignadas para trabajar.
-    // Especificamos 'technician_id' porque no sigue la convención estándar (user_id).
-    public function assignedAppointments() {
+    /**
+     * Un usuario (Técnico) tiene muchas citas asignadas para trabajar.
+     * Especificamos 'technician_id' porque no sigue la convención estándar (user_id).
+     *
+     * @return HasMany
+     */
+    public function assignedAppointments(): HasMany
+    {
         return $this->hasMany(Appointment::class, 'technician_id');
     }
 }

@@ -1,27 +1,47 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\Auth;
 
-use Illuminate\Support\Facades\Password;
+use App\Modules\Auth\Actions\ForgotPasswordAction;
+use App\Modules\Auth\DTOs\ForgotPasswordDTO;
+use App\Modules\Auth\Exceptions\PasswordResetLinkException;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 #[Layout('components.layouts.guest')]
-class ForgotPassword extends Component
+final class ForgotPassword extends Component
 {
     public string $email = '';
 
+    private ForgotPasswordAction $forgotPasswordAction;
+
+    public function __construct(ForgotPasswordAction $forgotPasswordAction = null)
+    {
+        $this->forgotPasswordAction = $forgotPasswordAction ?? app(ForgotPasswordAction::class);
+    }
+
     /**
-     * Send a password reset link to the provided email address.
+     * Envía un link de restablecimiento de contraseña.
      */
     public function sendPasswordResetLink(): void
     {
-        $this->validate([
-            'email' => ['required', 'string', 'email'],
-        ]);
+        try {
+            $this->validate([
+                'email' => ['required', 'string', 'email'],
+            ]);
 
-        Password::sendResetLink($this->only('email'));
+            $dto = new ForgotPasswordDTO(email: $this->email);
 
-        session()->flash('status', __('Se enviará un enlace de restablecimiento si la cuenta existe.'));
+            $this->forgotPasswordAction->execute($dto);
+
+            session()->flash('status', __('Se enviará un enlace de restablecimiento si la cuenta existe.'));
+        } catch (PasswordResetLinkException $e) {
+            throw ValidationException::withMessages([
+                'email' => $e->getMessage(),
+            ]);
+        }
     }
 }

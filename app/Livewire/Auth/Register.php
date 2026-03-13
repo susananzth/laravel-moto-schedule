@@ -1,57 +1,69 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\Auth;
 
-use App\Models\User;
-use Illuminate\Auth\Events\Registered;
+use App\Modules\Auth\Actions\RegisterAction;
+use App\Modules\Auth\DTOs\RegisterDTO;
+use App\Modules\Auth\Exceptions\UserAlreadyExistsException;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 #[Layout('components.layouts.guest')]
-class Register extends Component
+final class Register extends Component
 {
-    // Propiedades públicas para el formulario de registro
-    public $firstname = '';
-    public $lastname = '';
-    public $username = '';
-    public $phone = '';
-    public $email = '';
-    public $password = '';
-    public $password_confirmation = ''; // Livewire busca automáticamente esta variable para la regla 'confirmed'
+    public string $firstname = '';
+    public string $lastname = '';
+    public string $username = '';
+    public string $phone = '';
+    public string $email = '';
+    public string $password = '';
+    public string $password_confirmation = '';
+
+    private RegisterAction $registerAction;
+
+    public function __construct(RegisterAction $registerAction = null)
+    {
+        $this->registerAction = $registerAction ?? app(RegisterAction::class);
+    }
 
     /**
      * Maneja el registro de nuevos usuarios.
      */
     public function register(): void
     {
-        // 1. Validación estricta de datos.
-        // 'unique:users': Verifica en la BD que no exista el username/email.
-        $validated = $this->validate([
-            'firstname' => ['required', 'string', 'max:255'],
-            'lastname' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:255', 'unique:users'],
-            'phone' => ['required', 'string', 'max:20'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
-        ]);
+        try {
+            $validated = $this->validate([
+                'firstname' => ['required', 'string', 'max:255'],
+                'lastname' => ['required', 'string', 'max:255'],
+                'username' => ['required', 'string', 'max:255'],
+                'phone' => ['required', 'string', 'max:20'],
+                'email' => ['required', 'string', 'email', 'max:255'],
+                'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
+            ]);
 
-        // 2. Hash del password. NUNCA guardar contraseñas en texto plano.
-        $validated['password'] = Hash::make($validated['password']);
+            $dto = new RegisterDTO(
+                firstname: $this->firstname,
+                lastname: $this->lastname,
+                username: $this->username,
+                phone: $this->phone,
+                email: $this->email,
+                password: $this->password,
+            );
 
-        // 3. Crear usuario y disparar evento Registered (esto envía el email de bienvenida/verificación).
-        event(new Registered(($user = User::create($validated))));
+            $user = $this->registerAction->execute($dto);
 
-        // 4. Asignación de Rol (Librería Spatie).
-        // Todos los que se registran por el formulario público son 'Cliente'.
-        $user->assignRole('Cliente');
+            Auth::login($user);
 
-        // 5. Login automático tras registro.
-        Auth::login($user);
-
-        // 6. Redirección.
-        $this->redirect(route('dashboard', absolute: false), navigate: true);
+            $this->redirect(route('dashboard', absolute: false), navigate: true);
+        } catch (UserAlreadyExistsException $e) {
+            throw ValidationException::withMessages([
+                'email' => $e->getMessage(),
+            ]);
+        }
     }
 }

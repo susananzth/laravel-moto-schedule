@@ -1,38 +1,55 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\Auth;
 
-use App\Livewire\Actions\Logout;
+use App\Modules\Auth\Actions\LogoutAction;
+use App\Modules\Auth\DTOs\LogoutDTO;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 #[Layout('components.layouts.guest')]
-class VerifyEmail extends Component
+final class VerifyEmail extends Component
 {
+    public function __construct(
+        private readonly LogoutAction $logoutAction,
+    ) {}
+
     /**
-     * Send an email verification notification to the user.
+     * Envía notificación de verificación de email.
      */
     public function sendVerification(): void
     {
-        if (Auth::user()->hasVerifiedEmail()) {
-            $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
+        $user = Auth::user();
 
+        if (! $user) {
+            $this->redirect('/', navigate: true);
             return;
         }
 
-        Auth::user()->sendEmailVerificationNotification();
+        if ($user->hasVerifiedEmail()) {
+            $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
+            return;
+        }
 
-        Session::flash('status', 'verification-link-sent');
+        $user->sendEmailVerificationNotification();
+
+        session()->flash('status', 'verification-link-sent');
     }
 
     /**
-     * Log the current user out of the application.
+     * Cierra la sesión del usuario.
      */
-    public function logout(Logout $logout): void
+    public function logout(): void
     {
-        $logout();
+        $user = Auth::user();
+
+        if ($user) {
+            $dto = new LogoutDTO(userId: $user->id);
+            $this->logoutAction->execute($dto);
+        }
 
         $this->redirect('/', navigate: true);
     }

@@ -1,39 +1,33 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Auth\Actions\LogoutAction;
+use App\Modules\Auth\DTOs\LogoutDTO;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
 
 /**
- * Controlador para gestionar el cierre de sesión.
- * No usamos Livewire aquí porque el logout requiere una redirección completa y
- * limpieza de cookies a nivel de respuesta HTTP estándar.
+ * HTTP controller for logout route.
+ * Uses the centralized LogoutAction from Auth module.
  */
-class LogoutController extends Controller
+final class LogoutController extends Controller
 {
+    public function __construct(
+        private LogoutAction $logoutAction
+    ) {}
+
     /**
-     * Cierra la sesión del usuario actual.
-     *
-     * @param Request $request La solicitud HTTP actual.
-     * @return \Illuminate\Http\RedirectResponse Redirige al usuario a la página de inicio.
+     * Execute user logout.
      */
     public function __invoke(Request $request)
     {
-        // 1. Cierra la sesión del guardián 'web' (usuarios normales).
-        Auth::guard('web')->logout();
+        // pass authenticated user id to DTO so action can log or audit if needed
+        $user = $request->user();
+        $this->logoutAction->execute(new LogoutDTO($user?->id ?? 0));
 
-        // 2. Invalida la sesión actual. Esto es CRÍTICO por seguridad para prevenir
-        // ataques de "Session Fixation" (que alguien use una cookie vieja para entrar).
-        Session::invalidate();
-
-        // 3. Regenera el token CSRF. Evita que formularios abiertos previamente
-        // puedan enviar datos maliciosos después del logout.
-        Session::regenerateToken();
-
-        // 4. Redirección final.
         return redirect('/');
     }
 }

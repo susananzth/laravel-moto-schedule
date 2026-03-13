@@ -1,38 +1,27 @@
 <div class="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-    <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 max-w-md w-full mx-auto">
-        <div class="mb-6 text-center">
-            <h2 class="text-2xl font-bold text-moto-black mb-2">{{ __('Recuperar Contraseña') }}</h2>
-            <p class="text-sm text-gray-600">
-                {{ __('Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.') }}
-            </p>
-        </div>
+    <div
+        class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 max-w-md w-full mx-auto transition-colors duration-200">
+        <x-auth-header-dark :title="__('Recuperar Contraseña')" :description="__('Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.')" />
 
-        <x-auth-session-status class="mb-4 text-center" :status="session('status')" />
+        <x-auth-session-status-dark :status="session('status')" />
 
-        <form wire:submit="sendPasswordResetLink" class="space-y-6">
-            <x-forms.input
-                name="email"
-                wireModel="email"
-                :label="__('Correo electrónico')"
-                type="email"
-                required
-                autofocus
-                placeholder="tu@email.com"
-                icon="fas fa-envelope"
-            />
+        <form wire:submit="sendPasswordResetLink" class="space-y-6 mt-8">
+            <x-forms.input-dark name="email" wireModel="email" :label="__('Correo electrónico')" type="email" required autofocus
+                placeholder="tu@email.com" />
 
-            <x-button variant="primary" type="submit" class="w-full">
+            <x-button-dark variant="primary" type="submit" class="w-full">
                 {{ __('Enviar enlace de recuperación') }}
-            </x-button>
+            </x-button-dark>
         </form>
 
-        <div class="mt-6 text-center">
-            <p class="text-sm text-gray-600">
+        <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 text-center">
+            <p class="text-sm text-gray-600 dark:text-gray-400">
                 {{ __('¿Lo recordaste?') }}
-                <a href="{{ route('login') }}" class="text-moto-red hover:text-red-700 font-medium transition duration-150">
-                    {{ __('Volver al inicio de sesión') }}
-                </a>
             </p>
+            <a href="{{ route('login') }}"
+                class="inline-block mt-2 text-moto-red dark:text-red-500 hover:text-red-700 dark:hover:text-red-400 font-medium transition">
+                {{ __('Volver al inicio de sesión') }}
+            </a>
         </div>
     </div>
 </div>
